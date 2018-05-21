@@ -141,10 +141,10 @@
 ```
 ## Ethereum Ticket System ##
 
-<img src="https://github.com/momo457121/EthereumTicket/blob/master/SamplePic.png" width="500">
+<img src="https://github.com/momo457121/EthereumTicket/blob/master/TicketSystem.png" width="500">
 
 #### Ticket contract ####
-1. liveOpen       : 發佈一場售票表演
+1. Live Open       : 發佈一場售票表演
 
 2. Buy ticket     : 購買票券
 
