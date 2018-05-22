@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>訂購票券</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='/stylesheets/show.css' />
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="./web3.js"></script>
+    <script src="./javascripts/ticketdisplay.js"></script>
+    <script src="./javascripts/ticketApi.js"></script>
+    <script src="./javascripts/tokenApi.js"></script>
+    <script src="./javascripts/httprequest.js"></script>
+    <script>
+      
+      var liveJson = [
+      ];
+
+      var currentAccountAddr;
+      
+      var contractAddr;
+      var contractAbi;
+      var contractByteCode;
+
+      var tokenAddr;
+      var tokenAbi;
+      var tokenByteCode;
+
+      function init() {
+          if (typeof web3 !== 'undefined') {
+            web3 = new Web3(web3.currentProvider);
+            web3.eth.getAccounts(function(error, accounts) {
+              currentAccountAddr = web3.eth.accounts[0];
+              web3.eth.defaultAccount = web3.eth.accounts[0];
+
+              document.getElementById("account_owner").textContent = currentAccountAddr;
+              // console.log('accountAddress : ' + currentAccountAddr);
+              // var addWallet = web3.eth.accounts.wallet.add(currentAccountAddr);
+              // console.log("wallet : " + addWallet);
+              balance();
+            });
+
+            web3.version.getNetwork((err, netId) => {
+              switch (netId) {
+                case "1":
+                  console.log('This is mainnet')
+                  break
+                case "2":
+                  console.log('This is the deprecated Morden test network.')
+                  break
+                case "3":
+                  console.log('This is the ropsten test network.')
+                  break
+                case "4":
+                  console.log('This is the Rinkeby test network.')
+                  break
+                case "42":
+                  console.log('This is the Kovan test network.')
+                  break
+                default:
+                  console.log('This is an unknown network.')
+              }
+            })
+
+            console.log("web3 version : " + web3.version.api);
+
+            func_post("", './api/getContractInfo', function(data){
+                // console.log(data);
+                var repData = JSON.parse(data);
+                contractAddr = repData.address;
+                contractAbi = repData.abi;
+                contractByteCode = repData.bytecode;
+
+                tokenAddr = repData.token_address;
+                tokenAbi = repData.token_abi;
+                tokenByteCode = repData.token_byteCode;
+                // console.log("contract addr : " + contractAddress);
+            }, function(error){
+              console.log("error : " + error);
+            });
+            
+          } else {
+            web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8080"));
+          }
+          if (window.localStorage["liveJson"]) {
+            liveJson = JSON.parse(window.localStorage["liveJson"]);
+          }
+          $("#infoContent").append(function(){return setupLives(liveJson)});
+      }
+
+      function updateLiveInfo() {
+          console.log("updateLiveInfo");
+          // $("#ticketContent").append(function(){return AddBlock()});
+          var liveCount = liveJson.length;
+          var showName = document.getElementById("showName").value;
+          var seatCount = document.getElementById("seatNum").value;
+          var seatCost = document.getElementById("seatCost").value;
+
+          var showinfoJson = {
+              name: showName,
+              id: liveCount
+          };
+          
+          var sJson = [];
+          for (var i=0; i<seatCount; i++) {
+              var sxJson = {
+                  id: i,
+                  cost: seatCost,
+                  state: "",
+                  owner: ""
+              }
+              sJson.push(sxJson);
+          }
+          showinfoJson.seat = sJson;
+          
+          liveJson.push(showinfoJson);
+          window.localStorage["liveJson"] = JSON.stringify(liveJson);
+          liveOpen(showName, seatCount, seatCost);
+      }
+
+      function getLiveInfo(id) {
+          document.getElementById("content").style.paddingBottom = 0;
+          $("#ticketContent").empty().append(function(){return setupSeats(id)});
+      }
+
+      window.onload=init;
+    </script>
+  </head>
+  
+  <body>
+    <div id="loadingLayout" class="grayBackground">
+      <div class="loading"></div>
+    </div>
+    <div class="content" id="content">
+      <div class="titlebar">
+          <div class="ticket_info_btn"> Etherem Ticket</div>
+          <div class="ownerInfo" style="padding-right: 10px;"> Owner : 
+            <span id="account_owner"></span>
+          </div>
+          
+          <button type="button" class="show_info_moneybtn" id="req_btn" onClick="requestMoney()">+</button>
+          <button type="button" class="show_info_moneybtn" id="balance_btn" onClick="balance()">$</button>
+          <br>
+          <div class="inputInfo">Balance : 
+            <span id="balancetext"></span>
+          </div>
+      </div>
+      <div class="scrollmenu" id="infoContent"></div>
+      <div class="ticket_info_content" id="ticketContent"></div>
+      
+    </div>
+    <div class="footer">
+        <div style="margin-left: 200px; padding-top: 10px; font-size: 25px;"> Live Now!</div>
+        <div class="createBtnInfo">
+            <input id="showName" placeholder="節目名稱" class="inputLiveInfo" value="NowHere"><br>
+            <input id="seatNum" placeholder="售票數" class="inputLiveInfo" type="number" value="20"><br>
+            <input id="seatCost" placeholder="票價" class="inputLiveInfo" type="number" value="10"><br>
+        </div>
+
+        <button type="button" class="show_info_addbtn" id="add_btn" onClick="updateLiveInfo()">Live Now</button>
+    </div>
+  </body>
+</html>
